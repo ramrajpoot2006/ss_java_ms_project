@@ -1,0 +1,125 @@
+spring:
+  application:
+    name: fulfillment-configuration-api
+  cloud:
+    loadbalancer:
+      cache:
+        enabled:  false
+  security:
+    oauth2:
+      client:
+        provider:
+          sfcc:
+            token-uri: ${SFCC_ACCESS_TOKEN_URL}
+        registration:
+          sfcc:
+            authorization-grant-type: client_credentials
+            client-authentication-method: client_secret_basic
+            client-id: ${SFCC_CLIENT_ID}
+            client-secret: ${SFCC_CLIENT_SECRET}
+            scope:  mail
+  jpa:
+    show-sql: false
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      jakarta:
+        persistence:
+          sharedCache:
+            mode: ALL
+      hibernate.enable_lazy_load_no_trans: true
+      hibernate.order_inserts: true
+      hibernate.jdbc.batch_size: 50
+      hibernate.jdbc.lob.non_contextual_creation: true
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      ddl-auto: validate
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: username
+    password: password
+    #url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+    hikari:
+      connection-test-query: SELECT 1
+      jdbc-url: ${spring.datasource.url}
+      maximum-pool-size: 25
+      minimum-idle: 5
+      pool-name: fulfillment-api-pool
+      username: ${DB_USER}
+      password: ${DB_PASSWORD}
+      connection-timeout: 30000
+      idle-timeout: 60000
+      max-lifetime: 240000
+flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    enabled: true
+http:
+  connect-timeout: 2000
+  connection-request-timeout: 30000
+  socket-timeout: 3000
+  keep-alive-idle-connection: 300000
+  validate-connection-after-ms: 5000
+  max-connection-pool-size-total: 50
+  max-connection-pool-size-per-route: 20
+  max-retry-attempts: 3
+  retry-period: 400
+  max-retry-period: 1000
+feign:
+    client:
+      refresh-enabled: true
+    oauth2:
+      enabled: true
+      clientRegistrationId: sfcc
+logging:
+  env: local
+  #leanix-id: ${LEANIX_ID}
+  logBody: true#${LOG_BODY}
+  config: classpath:logback-spring.xml
+  sanitize:
+    headers:  api-key
+    clientheaders:  authorization
+management:
+  endpoint:
+    health:
+      show-details: always
+    configprops:
+      enabled: true
+    env:
+      enabled: true
+      keys-to-sanitize:
+  endpoints:
+    web:
+      path-mapping:
+        prometheus: /prometheus
+      base-path:  /actuator
+      exposure:
+        include: health, prometheus, info
+  health:
+    diskspace:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+server:
+  compression:
+    enabled: true
+zonky:
+  test:
+    database:
+      replace:  any
+      postgres:
+        docker:
+          image:  postgres:11-alpine
+sfcc:
+  base-url:
+    eu: ${SFCC_BASE_URL_EU}
+  put-shipping-method-xml-url: ${SFCC_PUT_SHIPPING_METHOD_XML_URL}
+  job-execution-url: ${SFCC_JOB_EXECUTION_URL}
+  job-status-url: ${SFCC_JOB_STATUS_URL}
+  job-status-retry:
+    max-attempts: ${SFCC_JOB_STATUS_RETRY_MAX_ATTEMPTS:10}
+    delay-ms: ${SFCC_JOB_STATUS_RETRY_DELAY:500}

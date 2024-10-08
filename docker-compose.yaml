@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+    container_name: app
+    environment:
+      # General
+      LEANIX_ID: af1ddeb1-070c-43b6-8cd4-82c60b18e1b8
+      ENVIRONMENT: dev
+      LOG_LEVEL: INFO
+      LOG_BODY: false
+      # DB
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: shipping
+      DB_USER: shipping
+      DB_PASSWORD: shipping
+      # SFCC
+      SFCC_ACCESS_TOKEN_URL: https://account.demandware.com/dw/oauth2/access_token
+      SFCC_CLIENT_ID: e7e81de9-6486-4099-8a2e-6cee112a9e05
+      SFCC_BASE_URL_EU: https://development-test-domain_namegroup-eu.demandware.net/
+      SFCC_PUT_SHIPPING_METHOD_XML_URL: on/demandware.servlet/webdav/Sites/Impex/src/upload/shipping_methods/
+      SFCC_JOB_EXECUTION_URL: s/-/dw/data/v18_2/jobs/ImportShippingMetods/executions
+      SFCC_JOB_STATUS_URL: s/-/dw/data/v22_10/job_execution_search
+      SFCC_JOB_STATUS_RETRY_MAX_ATTEMPTS: 10
+      SFCC_JOB_STATUS_RETRY_DELAY: 500
+      SFCC_CLIENT_SECRET: ${SFCC_CLIENT_SECRET}
+      # OpenTelemetry
+      OTEL_RESOURCE_ATTRIBUTES: service.name=fulfillment-configuration-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otelcol:4317
+      OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED: false
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+  
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: shipping
+      POSTGRES_PASSWORD: shipping
+    volumes:
+      - data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  otelcol:
+    image: otel/opentelemetry-collector:0.70.0
+    container_name: otelcol
+    command: --config /etc/otelcol-config.yaml
+    volumes:
+      - ./otelcol-config.yaml:/etc/otelcol-config.yaml
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - 9411:9411
+
+volumes:
+  data: {}
